@@ -26,6 +26,15 @@
 - 遗留：严格预算一致性、跨模型 fallback 授权、事件总线/数据库选型、账单规则及协议实测；需后续 ADR 和评审。
 - 相关提交：e02682a、b71dc8c、6ac75c9、e6b0a46、9f5ca94。
 
+## P-001A 架构决策固化（2026-11-17）
+- [x] 记录 PostgreSQL / ClickHouse / Redis / NATS JetStream 职责及一致性：docs/adr/0001-platform-stack.md
+- [x] 记录严格预算并发预留与故障降级：docs/adr/0002-budget-control.md
+- [x] 记录双协议 MVP 和跨模型 fallback 默认禁止：docs/adr/0003-api-and-fallback.md
+- [x] 同步 docs/roadmap.md、docs/protocol-compatibility.md、docs/control-data-plane.md、docs/pricing-billing.md、docs/routing-design.md
+- 验证：GitHub API 返回文件提交 SHA；尚未运行并发、故障、协议兼容或端到端测试。
+- 待验证：Redis/PG 跨系统恢复、JetStream 重放、预算严格性、Responses SSE 与上游适配。
+- 关键提交：1a611aa、d5cd9dd、05daed6。
+
 ## 当前状态
 架构与需求设计阶段；无可运行服务、未完成端到端验证。以上“完成”仅表示相应文档或设计决策已落地。
 
