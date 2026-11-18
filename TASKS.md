@@ -11,10 +11,20 @@
 - [x] T-006：建立 PLANS.md / TASKS.md 任务治理约定
 
 ## 进行中
-- [ ] P-001：深化领域模型、路由、定价、计量账本、控制面/数据面边界
+- [x] P-001：设计交付完成，待架构评审（不代表实现验收）
 
 ## 未开始
 - [ ] P-002：工程技术栈与可运行 MVP
+
+## P-001 交付记录（2026-11-17）
+- [x] 领域模型 v0.2 与 Mermaid ERD：docs/domain-model.md
+- [x] 路由/质量/熔断/故障转移：docs/routing-design.md
+- [x] 采购成本、售价、计量、账务与对账：docs/pricing-billing.md
+- [x] 控制面/数据面与配置分发：docs/control-data-plane.md
+- [x] 协议兼容矩阵与版本跟踪：docs/protocol-compatibility.md
+- 验证：GitHub 文件创建/更新操作返回 commit SHA；未执行运行时、性能或协议端到端测试。
+- 遗留：严格预算一致性、跨模型 fallback 授权、事件总线/数据库选型、账单规则及协议实测；需后续 ADR 和评审。
+- 相关提交：e02682a、b71dc8c、6ac75c9、e6b0a46、9f5ca94。
 
 ## 当前状态
 架构与需求设计阶段；无可运行服务、未完成端到端验证。以上“完成”仅表示相应文档或设计决策已落地。
