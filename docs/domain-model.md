@@ -1,37 +1,84 @@
-# Agent Gateway 核心领域模型 v0.1
+# P-001 核心领域模型 v0.2
 
-## Bounded Contexts
-1. Catalog：ModelFamily、ModelRevision、ModelCapability、UpstreamModel、PublicModel、ModelGroup、ModelGroupMember。
-2. Supply：Provider、Channel、ChannelCredential、ChannelDeployment、ChannelQuota、CostRateCard、CostRateItem。
-3. Routing：RoutePolicy、RouteCandidate、RouteConstraint、ChannelHealth、CircuitBreaker、RouteDecision、RouteAttempt。
-4. Access：Tenant、Project、APIKey、ModelEntitlement、RateLimitPolicy、BudgetAccount、BudgetReservation。
-5. Pricing：PricePlan、PriceRule、PriceAssignment、PriceSnapshot、PromotionPolicy。
-6. Metering：Invocation、InvocationAttempt、UsageRecord、CostRecord、ChargeRecord、BillingLedger、Invoice、Reconciliation。
+## 边界与身份
+同一 Data Plane 服务 INTERNAL（Agent Infra）与 EXTERNAL（商业 API）租户。tenant_type 只决定业务策略，不绕过认证、模型授权或用量审计。每次调用必须绑定 tenant_id、project_id（可选）、key_id、request_id。
 
-## 核心关系
-Provider 1:N Channel；Channel N:M UpstreamModel，通过 ChannelDeployment 表达。
-PublicModel 1:N RoutePolicy；RoutePolicy 1:N RouteCandidate；RouteCandidate 指向 ChannelDeployment。
-ModelGroup N:M PublicModel；Tenant N:M ModelGroup（经 ModelEntitlement）。
-Tenant 1:N Project 1:N APIKey；PriceAssignment 关联 Tenant / ModelGroup / PricePlan。
-Invocation 1:N InvocationAttempt；InvocationAttempt 1:N UsageRecord；UsageRecord 经版本化 CostRateCard/PricePlan 生成成本与收费记录；BillingLedger 记录结算和调整。
+## ERD
+```mermaid
+erDiagram
+  TENANT ||--o{ PROJECT : owns
+  TENANT ||--o{ API_KEY : owns
+  PROJECT ||--o{ API_KEY : scopes
+  PROVIDER ||--o{ CHANNEL : owns
+  CHANNEL ||--o{ CHANNEL_DEPLOYMENT : exposes
+  UPSTREAM_MODEL ||--o{ CHANNEL_DEPLOYMENT : served_by
+  PUBLIC_MODEL ||--o{ ROUTE_POLICY : routed_by
+  ROUTE_POLICY ||--o{ ROUTE_CANDIDATE : contains
+  CHANNEL_DEPLOYMENT ||--o{ ROUTE_CANDIDATE : targets
+  MODEL_GROUP ||--o{ MODEL_GROUP_MEMBER : includes
+  PUBLIC_MODEL ||--o{ MODEL_GROUP_MEMBER : belongs_to
+  TENANT ||--o{ MODEL_ENTITLEMENT : authorized
+  MODEL_GROUP ||--o{ MODEL_ENTITLEMENT : granted
+  PRICE_PLAN ||--o{ PRICE_RULE : has
+  TENANT ||--o{ PRICE_ASSIGNMENT : billed_by
+  PRICE_PLAN ||--o{ PRICE_ASSIGNMENT : assigned
+  TENANT ||--o{ INVOCATION : makes
+  INVOCATION ||--o{ INVOCATION_ATTEMPT : retries
+  CHANNEL_DEPLOYMENT ||--o{ INVOCATION_ATTEMPT : handles
+  INVOCATION_ATTEMPT ||--o{ USAGE_RECORD : measures
+  INVOCATION ||--o{ CHARGE_RECORD : charged
+  INVOCATION_ATTEMPT ||--o{ COST_RECORD : costs
+  TENANT ||--o{ BILLING_LEDGER : posts
+```
 
-## 必须保持的不变量
-- APIKey 只保存校验值或受保护引用，不保存明文。
-- 每个 Invocation 绑定可信 tenant_id、key_id、public_model_id、route_policy_version、price_version。
-- 每个 Attempt 绑定 channel_deployment_id、upstream_model_id、protocol_version。
-- 使用不可变的计量与价格快照重算历史费用；金额用 decimal/整数最小单位，禁止二进制浮点。
-- UsageRecord 有 source（provider/gateway_estimated/reconciled）、status 和去重键。
-- 账务调整使用冲正/补记，不直接改写已入账流水。
-- 跨模型 fallback 必须满足能力和客户授权，并有明确价格规则。
-- 控制面配置经版本化快照下发；数据面热路径不依赖控制面 DB。
-- RouteDecision 与 RouteAttempt 分开；响应已开始后禁止无条件重试。
+## 实体主键及关键字段
+| Entity | Primary key | Critical fields / constraints |
+|---|---|---|
+| Tenant | tenant_id | tenant_type INTERNAL/EXTERNAL, status, billing_currency, billing_account_id |
+| Project | project_id | tenant_id FK, code unique within tenant |
+| APIKey | key_id | tenant_id FK, project_id nullable, key_prefix, verifier_hash, scopes, status, expires_at |
+| Provider | provider_id | code unique, name, adapter_type |
+| Channel | channel_id | provider_id FK, endpoint allowlist, region, credential_ref, status |
+| UpstreamModel | upstream_model_id | provider_id FK, native_name, revision, capabilities_json, context_limit |
+| ChannelDeployment | deployment_id | channel_id FK, upstream_model_id FK, protocol_family, upstream_api_version, status |
+| PublicModel | public_model_id | code unique, display_name, declared_capabilities, status |
+| ModelGroup | group_id | code unique, visibility, status |
+| ModelGroupMember | group_id + public_model_id | active_from, active_until |
+| ModelEntitlement | entitlement_id | tenant_id, group_id, constraints, valid_from/to |
+| RoutePolicy | policy_id + version | public_model_id, strategy, constraints, effective_at |
+| RouteCandidate | policy_id + version + deployment_id | weight, priority, enabled |
+| ChannelHealth | deployment_id + protocol + window | sample_count, ttft_p95, tpot_p95, error_rate, updated_at |
+| CostRateCard | cost_card_id + version | deployment_id, currency, effective_from/to |
+| CostRateItem | rate_item_id | cost_card_version, metric, unit, price_decimal, conditions |
+| PricePlan | plan_id + version | currency, effective_from/to, status |
+| PriceRule | price_rule_id | plan_version, metric, unit, price_decimal, conditions |
+| PriceAssignment | assignment_id | tenant_id, group_id nullable, plan_id/version, priority, effective interval |
+| Invocation | request_id | tenant_id, key_id, public_model_id, protocol_version, route_policy_version, price_snapshot_id, status, timestamps |
+| InvocationAttempt | attempt_id | request_id FK, deployment_id, upstream_request_id, upstream_model_id, status, retry_reason, timestamps |
+| UsageRecord | usage_id | attempt_id, metric, quantity_decimal, source, confidence, revision, dedupe_key unique |
+| CostRecord | cost_id | attempt_id, cost_card_version, amount_decimal, currency |
+| ChargeRecord | charge_id | request_id, price_snapshot_id, amount_decimal, currency, status |
+| BillingLedger | ledger_entry_id | account_id, request_id, charge_id, amount_decimal, currency, type, idempotency_key unique |
+| Invoice | invoice_id | tenant_id, billing_period, currency, status, total |
+| Reconciliation | reconciliation_id | provider/channel, period, difference, resolution_status |
 
-## 调用生命周期
-AUTHENTICATE → AUTHORIZE → RESERVE_BUDGET → RESOLVE_PUBLIC_MODEL → FILTER_CAPABILITIES → SELECT_DEPLOYMENT → ADAPT_REQUEST → UPSTREAM_ATTEMPT → STREAM/RESPOND → COLLECT_USAGE → SETTLE → EMIT_LEDGER → RECONCILE。
+## 数据不变量
+1. APIKey 原始 SK 只在创建时展示；服务端保存不可逆校验材料或受保护引用。
+2. 上游渠道的原生模型和公开模型分离；路由最小单位是 ChannelDeployment。
+3. PricePlan、CostRateCard、RoutePolicy 发布后不可原地覆盖历史版本。
+4. Invocation 与 Attempt 分离；一个客户端请求可产生多个上游成本。
+5. 每次收费绑定价格快照；金额采用 DECIMAL/精确整数，禁止 float。
+6. UsageRecord 可追加修正版本，但不能直接抹除原始计量证据。
+7. 账务冲正/补记采用新流水，不改写已过账记录。
+8. 同一请求计费幂等键唯一；不同币种不直接相加，换汇使用版本化汇率。
+9. 路由与权限按租户绑定，数据面不能信任用户传入的 tenant_id。
+10. 模型能力映射需显式验证，不允许静默降级 tools、reasoning 或多模态能力。
 
-## 质量指标
-TTFT、TPOT、E2E latency、成功率、429、5xx、超时、tokens/s、可用配额、单位成本；按 channel_deployment + api_protocol + region + 时间窗聚合。
-首 Token 时间应以首个有效模型输出 token 定义，不能简单用 HTTP 首字节时间替代。
+## 请求生命周期
+AUTH → ENTITLEMENT → BUDGET_RESERVATION → MODEL_RESOLUTION → CANDIDATE_FILTER → ROUTE_DECISION → ATTEMPT → STREAM → USAGE_FINALIZE → CHARGE → LEDGER → RECONCILIATION。
 
-## 待确认
-协议族支持范围、是否允许跨模型 fallback、成本币种与汇率、账单计费粒度、用量估算规则、预算超额策略、数据保留期限和审计策略。
+## 事务边界
+请求及 Attempt 元数据可在 OLTP 中持久化；数据面同步路径避免跨数据库分布式事务。使用 transactional outbox 或等效持久事件保证账务处理可重放；消费者以唯一键去重。账务对账是最终一致，不承诺上游推理 exactly-once。
+
+## 需要 ADR 的开放项
+预算严格预留的一致性等级、存储引擎、事件总线、跨模型替代授权、计费币种与汇率来源。
