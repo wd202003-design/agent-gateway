@@ -26,4 +26,4 @@ EXTERNAL：商业租户使用销售价格、账单、余额与发票。
 - 配置回滚不改变已绑定历史请求的价格和成本版本。
 
 ## 待定技术选型
-PostgreSQL/MySQL、Redis、Kafka/NATS/数据库 Outbox、配置分发机制、KMS/Secrets、OpenTelemetry；需 ADR 决策而非预先绑定。
+已决定 PostgreSQL、ClickHouse、Redis、NATS JetStream + PostgreSQL Outbox；配置分发、KMS/Secrets、OpenTelemetry 具体方案仍需评审。参见 docs/adr/0001-platform-stack.md。
