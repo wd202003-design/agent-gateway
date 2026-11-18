@@ -37,3 +37,6 @@ PriceRule 使用 metric + unit + conditions + decimal_price；支持 input_token
 
 ## 验收
 同请求多 attempt、重试无重复收费、预算并发、部分输出、缺失 usage、价格变更后历史重算、跨币种对账。
+
+## 严格预算决策
+采用 Redis 并发协调与 PostgreSQL 权威预算/账本双层控制；跨系统原子性不能假设，严格预算账户需 PostgreSQL 条件预留确认。故障默认拒绝新的严格预算请求。详见 docs/adr/0002-budget-control.md。
