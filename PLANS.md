@@ -38,9 +38,9 @@
 
 ## P-002 sequential implementation execution (2026-11-17)
 Order is mandatory: P-002.1 verification → P-002.2 persistence/identity → P-002.3 routing → P-002.4 budget/metering → P-002.5 billing. Each phase must record code, tests and evidence; if tests or external infrastructure unavailable, mark phase BLOCKED/PARTIAL and do not claim completion. Do not permit billable traffic until strict budget and ledger gates pass.
-- [ ] P-002.1 Run Go tests and add protocol/error coverage
-- [ ] P-002.2 PostgreSQL repository, tenants, SK, channel/model persistence
-- [ ] P-002.3 multi-channel selection, health and fallback
-- [ ] P-002.4 Redis/PG strict budget, JetStream, ClickHouse ingestion
-- [ ] P-002.5 pricing, billing ledger and reconciliation
+- [ ] P-002.1 Run Go tests and add protocol/error coverage (tests/CI authored; execution blocked by checkout DNS)
+- [ ] P-002.2 PostgreSQL repository, tenants, SK, channel/model persistence (repository drafted; driver/runtime wiring pending)
+- [ ] P-002.3 multi-channel selection, health and fallback (selection/breaker primitives drafted; integration pending)
+- [ ] P-002.4 Redis/PG strict budget, JetStream, ClickHouse ingestion (PG budget draft, event contract, CH DDL; external clients pending)
+- [ ] P-002.5 pricing, billing ledger and reconciliation (price calculator/schema drafted; posting and reconciliation pending)
 Acceptance: runnable and tested with reproducible commands; production readiness requires integration/failure tests for each external dependency.
