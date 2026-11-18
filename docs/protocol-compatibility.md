@@ -6,7 +6,7 @@
 | OpenAI Chat Completions | M1 | roles, tools, tool_choice, JSON mode, SSE chunks, finish_reason, usage |
 | OpenAI Models | M1 | 按 SK 过滤公开模型、能力声明 |
 | OpenAI Embeddings | M2 | input batching、dimensions、usage |
-| OpenAI Responses | M2 | event types、tool calls、reasoning、response state、stream |
+| OpenAI Responses | M1 | event types、tool calls、reasoning、response state、stream |
 | Anthropic Messages | M3 | content blocks、tool_use、cache、thinking、SSE |
 | Gemini GenerateContent | M3 | parts、function calling、safety、stream |
 
@@ -30,3 +30,5 @@ Client Protocol Parser → Canonical Request（保留语义与 opaque extensions
 
 ## API 生命周期
 EXPERIMENTAL → STABLE → DEPRECATED → RETIRED；定义变更公告、兼容窗口、灰度、回滚和回归测试。公开模型别名与底层模型 revision 的变化分别审计。
+
+MVP 同时实现 Chat Completions 与 Responses，详见 docs/adr/0003-api-and-fallback.md。
