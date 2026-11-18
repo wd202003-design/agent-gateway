@@ -7,7 +7,6 @@ import (
  "crypto/subtle"
  "encoding/json"
  "errors"
- "fmt"
  "io"
  "log"
  "net/http"
@@ -108,4 +107,3 @@ func (h *Handler) proxy(w http.ResponseWriter,r *http.Request){
  }
  log.Printf("request path=%s status=%d duration_ms=%d bytes=%d",r.URL.Path,resp.StatusCode,time.Since(start).Milliseconds(),nbytes)
 }
-var _ = fmt.Sprintf
