@@ -14,7 +14,7 @@
 - [x] P-001：设计交付完成，待架构评审（不代表实现验收）
 
 ## 未开始
-- [ ] P-002：工程技术栈与可运行 MVP
+- [ ] P-002：工程 MVP（首轮代码已提交，尚未通过运行验证）
 
 ## P-001 交付记录（2026-11-17）
 - [x] 领域模型 v0.2 与 Mermaid ERD：docs/domain-model.md
@@ -34,6 +34,21 @@
 - 验证：GitHub API 返回文件提交 SHA；尚未运行并发、故障、协议兼容或端到端测试。
 - 待验证：Redis/PG 跨系统恢复、JetStream 重放、预算严格性、Responses SSE 与上游适配。
 - 关键提交：1a611aa、d5cd9dd、05daed6。
+
+## P-002 首轮工程交付（2026-11-17）
+- [x] Go 工程入口与 HTTP Server：go.mod、cmd/gateway/main.go
+- [x] 双协议开发切片：internal/gateway/gateway.go；静态 SK、模型别名、Chat Completions/Responses 的非流与 SSE 透传
+- [x] Mock 上游测试代码：internal/gateway/gateway_test.go
+- [x] 本地启动说明：docs/mvp-running.md、.env.example
+- [x] PostgreSQL 初始结构：db/migrations/0001_core.sql（未执行）
+- [x] JetStream 事件契约：docs/events.md（未接入）
+- [ ] 执行 go test ./... 并修复失败
+- [ ] 真实上游协议兼容与 SSE 取消/错误测试
+- [ ] PostgreSQL/Redis/NATS/ClickHouse 实际连接、预算预留、用量与账务
+- [ ] 多渠道路由、熔断、配置分发与商业租户认证
+- 验证结果：GitHub API 已返回提交 SHA；尝试通过 git clone 进行本地测试时因执行环境无法解析 github.com 而失败，因此没有 Go 测试通过的证据。
+- 风险：当前是单 SK/单渠道、无计费的开发演示代码，不可用于生产或商业租户流量。
+- 关键提交：f5ee67e、d1882a8、cf33823、26bd141、5027c6a、b5f4dd7。
 
 ## 当前状态
 架构与需求设计阶段；无可运行服务、未完成端到端验证。以上“完成”仅表示相应文档或设计决策已落地。
