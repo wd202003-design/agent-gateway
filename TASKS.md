@@ -50,6 +50,16 @@
 - 风险：当前是单 SK/单渠道、无计费的开发演示代码，不可用于生产或商业租户流量。
 - 关键提交：f5ee67e、d1882a8、cf33823、26bd141、5027c6a、b5f4dd7。
 
+## P-002.1—P-002.5 顺序执行记录（2026-11-17）
+- P-002.1 PARTIAL/BLOCKED：新增 GitHub Actions CI 与异常/取消测试。尝试 git clone 后因 github.com DNS 解析失败，未能执行 go test；CI 尚未确认通过。
+- P-002.2 PARTIAL：新增 internal/store/postgres.go 的 PostgreSQL 身份/部署查询；尚未注册驱动或接入 HTTP。
+- P-002.3 PARTIAL：新增 internal/routing/router.go 候选过滤/评分、熔断原语及单元测试；尚未接入数据面或实现动态健康采集。
+- P-002.4 PARTIAL：新增 internal/budget/budget.go PostgreSQL 条件预留与结算草案、internal/events/events.go JetStream publisher 接口、db/clickhouse/0001_usage.sql；Redis、NATS 和 ClickHouse 运行时均未接入。严格预算不能视为已验证。
+- P-002.5 PARTIAL：新增 internal/pricing/pricing.go 精确有理数价格计算、单元测试、db/migrations/0002_pricing.sql；未实现实际账务过账、发票或对账服务。
+- 风险：尚未完成端到端接线、真实数据库迁移、分布式故障测试和安全审计。商业付费流量必须保持禁用。
+- 本轮提交示例：41b97c5、6609da9、45677f7、4da6085、1f94caf、0d93576、d4e1f9e、57c9fe4。
+- 后续顺序：先恢复可复现 Go CI 与测试，再依次完成 P-002.2—P-002.5 的运行时集成及验收。
+
 ## 当前状态
 架构与需求设计阶段；无可运行服务、未完成端到端验证。以上“完成”仅表示相应文档或设计决策已落地。
 
